@@ -3,45 +3,43 @@
 ---
 
 - angular
--
-- [x] observable, http requests
--
-- [x] http interceptors
--
-- [x] data binding
--
-- forms, (later) (good to know)
--
-- pipes, dependency injection how in angular
--
-- @Input(), @Output() (later) (this is important)
--
-- child, parent component relationships
--
-- [x] ngInit -> angular hooks
--
-- angular directives,
-  \*Key features include:
-  Component-based architecture
-  Dependency injection (@Injectable())
-  RxJS for reactive programming (Observable)
-  Angular CLI [to scaffold and manage angular applications]
-  Angular.json (able to explain how angular.json works)
-  Two-way data binding [(ngModel)] [x]
-  Routing (must know) (register component to a specific route, then router.navigate[/route], component loads)
 
-  // cheques ui
+[x] observable, http requests
 
-  app.component.ts -> load the '/' home route
-  '/' -> loading.component.ts,
-  login check, sso enable undha ledha, if sso enable, re route to SSO url, or display standard login URL
+[x] http interceptors
 
-  Forms and validation (good to know)
-  Lazy loading (is with Observable, don't run until .subscribe() is called)
-  Testability (good to know)
+[x] data binding
 
-  nginx basics and how to deploy an angular app to this, how to deploy a front end app
-  ng build --production, what happens
+forms, (later) (good to know)
+
+pipes, dependency injection how in angular
+
+@Input(), @Output() (later) (this is important)
+
+child, parent component relationships
+
+[x] ngInit -> angular hooks
+
+angular directives,
+Key features include:
+Component-based architecture
+Dependency injection (@Injectable())
+RxJS for reactive programming (Observable)
+Angular CLI [to scaffold and manage angular applications]
+Angular.json (able to explain how angular.json works)
+Two-way data binding [(ngModel)] [x]
+Routing (must know) (register component to a specific route, then router.navigate[/route], component loads)
+
+app.component.ts -> load the '/' home route
+'/' -> loading.component.ts,
+login check, sso enable undha ledha, if sso enable, re route to SSO url, or display standard login URL
+
+Forms and validation (good to know)
+Lazy loading (is with Observable, don't run until .subscribe() is called)
+Testability (good to know)
+
+nginx basics and how to deploy an angular app to this, how to deploy a front end app
+ng build --production, what happens
 
 ---
 
@@ -213,34 +211,21 @@ myPromise
 
 - interpolation (means ts variable in html like this {{value}})
   ts: name: string = "hello";
-  html: <h1>{{name}}<h1>
+  html: `<h1>{{name}}<h1>`
   ts variable as display elements in html
 - property binding (input form variable binded into ts value)
   ts: imageUrl = "https://example.com/photo.jpg";
-  html: <img [src]="imageUrl">
+  html: `<img [src]="imageUrl">`
   ts variable as html attribute values
 - event binding
-  "<button (click)="sayHello()">Click me</button>"
+  `<button (click)="sayHello()">Click me</button>`
 - two way binding
   combination of property binding + event binding
   ts: username = "";
   must import FormsModule inside your ts.
-  html: <input [(ngModel)]="username">
+  html: `<input [(ngModel)]="username">`
   basically (change) event and property binding combined
-  ngModel is designed to work with elements that accept user input and emit a value change (like <input>, <select>, and <textarea>). A standard button is for triggering actions, not for data input in the same way.
-```ts
-  username: string = "dileep";
-
-  setValue() {
-    this.username = "thoutam";
-  }
-```
-
-```html
-<input [(ngModel)]="username" #ctrl="ngModel" required />
-<p>Value: {{ username }}</p>
-<button (click)="setValue()">Set value</button>
-```
+  ngModel is designed to work with elements that accept user input and emit a value change (like `<input>, <select>, and <textarea>`). A standard button is for triggering actions, not for data input in the same way.
 
 ### http interceptors
 
@@ -360,5 +345,3 @@ Born → Initialized → Updated → Destroyed
 - such as ngOnInit(), ngOnChanges(), ngOnDestroy()
 - ngOnInit() to perform initial instructions, api calls
 - ngOnDestroy() when component is removed from DOM, unsubscribe to open Observables
-
-
