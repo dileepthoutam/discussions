@@ -1,26 +1,25 @@
 package com.dileep;
 
-class Repository {
-  void save() {
-
-  }
-}
-
-class Service {
-  public Service() {
-  }
-
-  public void saveSomething() {
-    Repository repository = new Repository();
-    repository.save();
-  }
-}
-
 public class Main {
   public static void main(String[] args) {
 
-    Service service = new Service();
-    service.saveSomething();
+    Thread printFoo = new Thread(() -> {
+      System.out.println("foo");
+    });
 
+    Thread printBar = new Thread(() -> {
+      System.out.println("bar");
+    });
+
+    boolean canFoo = true;
+    boolean canBar = false;
+
+    while (canFoo) {
+      printFoo.start();
+      canBar = true;
+      if (canBar) {
+
+      }
+    }
   }
 }
