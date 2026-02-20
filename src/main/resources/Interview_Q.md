@@ -556,29 +556,276 @@ keep data consistent
 ---
 16. Pagination (offset vs cursor-based)
     ---
+Pagination is the process of splitting large datasets into smaller chunks (pages) instead 
+of returning everything at once.
+
+to avoid fetching too much data, reduce DB work load, improve API response time
+better to have multiple pages than infinite scroll
+
+GET /users?page=2&size=10
+
+what is offset based pagination?
+means, offset number is the number of rows you skip and limit is the total no of result rows
+SELECT * FROM users
+ORDER BY id
+LIMIT 10 OFFSET 20;
+
+problems with offset pagination
+
+OFFSET 1000000 LIMIT 10 (if you have query like this)
+db must scan all those rows and discard them, and then return the next 10 rows
+
+not good for large datasets
+
+
+'cursor based pagination
+
+instead of page numbers, use a cursor (last seen ID)
+
+GET /users?after=105
+
+```sql
+SELECT * FROM users
+WHERE id > 105
+ORDER BY id
+   LIMIT 10;
+```
+
+✅ Why It’s Better
+
+No skipping large rows
+Uses index efficiently
+Fast even with millions of records
+Stable results
+
+in api response, along with data, send the last used id
+in subsequent pages, use the id as cursor to the query
+
+
 
 ---
 17. Sharding & partitioning
     ---
 
+sharding is horizontal partitioning
+
+
+scaling up vs scaling out
+horizontal scaling vs vertical scaling
+
+one db server -> single point of failure, if too much data perfromance is effected
+add more replicas -> generally master & salve, CQRS read from one, write to another, sync them
+
+here in multiple servers data is exactly the same
+this is horizontal scaling, 
+
+
+but sharding means -> data is split across servers
+
+let's i have 1 billion records,
+100M in each DB across 10 db servers
+these are not replicas, dividing data into multiple servers
+
+i have to fetch one user detail, shard key
+data parallelism (sharding)
+
+**partitioning**
+
+splitting single table into smaller pieces inside same db server
+
+one db -> one logical table -> many internal partitions
+
+orders table (100 million rows)
+
+orders_2025_jan
+orders_2025_feb
+orders_2025_mar
+
+types partitioning
+
+1. range partitioning
+   CREATE TABLE orders (
+   id BIGINT,
+   created_at DATE
+   ) PARTITION BY RANGE (created_at);
+
+2. hash partitioning (hash(user_id) % 4)
+3. List partitioning is region based partitioning if you deploy across continents
+
+Horizontal: (subsets of table of rows partitioned by business logic)
+Veritical: (subsets of table by columns)
+Range: (divide data based on dates etcc)
+List: (subset the data based on predefined list of values of a particular column)
+
+CREATE TABLE orders (
+id INT,
+order_date DATE
+)
+PARTITION BY RANGE (YEAR(order_date)) (
+PARTITION p2024 VALUES LESS THAN (2025),
+PARTITION p2025 VALUES LESS THAN (2026)
+);
+
+range--
+
+1M records
+800K on one day
+200K across 9 days
+
+USERS
+--------------------------------
+id | name  | country
+--------------------------------
+1  | Asha  | IN
+2  | John  | US
+3  | Mei   | CN
+4  | Ravi  | IN
+
+based on a filter key, it will be split across
+
+Horizontal partitioning → mainly for performance & scalability
+
+Vertical partitioning → mainly for performance (I/O reduction)
+
+Range partitioning → mainly for maintenance & lifecycle management, and also helps performance when queries align with the range
+
 ---
 18. Read replicas & write scaling
     ---
+A read replica is a copy of your main database used only for read queries (SELECT).
+          ┌────────────┐
+Writes →  │  Primary   │
+          └─────┬──────┘
+                │ (replication)
+        ┌───────┴────────┐ 
+        │       │        │
+       Replica1  Replica2  Replica3
+       (read)     (read)     (read)
+
+
+🔹 Why Do We Need Them?
+
+Because most systems are:
+
+80–95% reads
+5–20% writes
+
+Instead of overloading the primary DB with reads, we:
+Send writes → Primary
+Send reads → Replicas
+
+how replication works?
+They use Write-Ahead Log (WAL) replication.
+
+Flow:
+
+Write happens on Primary
+It writes to WAL
+WAL is streamed to replicas
+Replicas replay changes
+
+
+synchronous -> write to primary and then write to all replica then respond
+asynchronous -> write to primary, respond & sending sync request to replicas
+
+how do you scale writes?
+vertical (add more cpu, more memory, faster disk) but maxes out
+horizontal (sharding)
+multi primary(rare)
+
+replication lag
+failover (master goes down, slave comes up as master style)
+read scaling
+write scaling
+
 
 ---
 19. Handling duplicate records
     ---
+why duplicates happen
+
+🔹 1. No Unique Constraints
+🔹 2. Race Conditions (concurrent writes)
+🔹 3. Retries in distributed systems
+🔹 4. Event reprocessing
+🔹 5. Idempotency not implemented
+
+always prevent at DB/schema level, add unique key constraints
+
 
 ---
 20. Optimistic vs pessimistic locking
     ---
+pessimistic
+
+User A → LOCK → update → unlock
+User B → WAIT
+
+optimistic
+
+User A → update (version 1 → 2)
+User B → update fails → retry
+
+| Scenario                | Use         |
+| ----------------------- | ----------- |
+| High conflict rate      | Pessimistic |
+| Rare conflicts          | Optimistic  |
+| Read-heavy system       | Optimistic  |
+| Financial transfers     | Pessimistic |
+| High scalability needed | Optimistic  |
+
+Thread A
+
+BEGIN;
+
+SELECT * FROM accounts
+WHERE id = 1
+FOR UPDATE;
+
+-- row is now locked
+
+UPDATE accounts
+SET balance = balance - 100
+WHERE id = 1;
+
+COMMIT;
+
+
+Thread B
+
+BEGIN;
+
+SELECT * FROM accounts
+WHERE id = 1
+FOR UPDATE;
+
+this will wait
 
 ---
 
 
     Caching & Performance
 21. What is caching and where to cache
+temporary storage to improve performance
+preferred for data that doesn't change and read heavy (static data)
+where to?
+in memory
+but also something like redis (a cache server)
+there are different caches like CDNs which are presented across globe to improve reading speed from DB
+
+if we're fetching data from us server on AWS
+to overcome latency, they have these edge locations where they have CDN servers
+what CDN do? it caches the data in servers closer to the users
+improves latency
+
+
 22. Cache eviction strategies (TTL, LRU)
+why do we cache eviction? can't keep cache growing forever
+reset at somepoint to update with latest data
+LRU (least recently used)
+TTL (Time to live) (means after certain period of time, it's removed from cache)
+
+
 23. Cache consistency & stale cache problems
 24. CDN and edge caching
 25. Why cache can make systems wrong
@@ -593,7 +840,8 @@ keep data consistent
 33. Handling race conditions
 34. Distributed locking
 35. Event-driven architecture
-36. Saga pattern (distributed transactions) 37.Graceful degradation
+36. Saga pattern (distributed transactions)
+37. 37.Graceful degradation
 38. Observability (logs, metrics, tracing)
 39. Deployments (blue-green, rolling)
 40. Handling traffic spikes & viral load
